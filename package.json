@@ -1,0 +1,35 @@
+{
+  "name": "routingllm",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^2.0.34",
+    "@gluestack-ui/config": "^1.1.20",
+    "@gluestack-ui/themed": "^1.1.73",
+    "@gluestack-style/react": "^1.0.57",
+    "@mastra/core": "^1.9.0",
+    "@vis.gl/react-maplibre": "^8.1.0",
+    "maplibre-gl": "^5.16.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-native": "^0.76.9",
+    "react-native-svg": "^15.12.0",
+    "react-native-web": "^0.20.0",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@types/react": "^19.2.5",
+    "@types/node": "^24.10.1",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  }
+}
