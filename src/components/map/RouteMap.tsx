@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Layer, Map, Source } from "@vis.gl/react-maplibre";
 import type { FeatureCollection } from "geojson";
 import type { MapRef } from "@vis.gl/react-maplibre";
@@ -173,6 +173,7 @@ function pointCollection(coordinate: [number, number]): FeatureCollection {
 
 export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const layers = useLayerStore((state) => state.layers);
   const route = useRoutingStore((state) => state.route);
   const routeError = useRoutingStore((state) => state.routeError);
@@ -495,7 +496,7 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
   const startVisible = visibility[START_LAYER_ID] ?? "visible";
   const endVisible = visibility[END_LAYER_ID] ?? "visible";
 
-  const recenterMap = () => {
+  const recenterMap = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map) {
       return;
@@ -537,7 +538,22 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
       maxZoom: 10,
       duration: 600,
     });
-  };
+  }, [chromeInsetLeft, endCoordinate, route, startCoordinate]);
+
+  useEffect(() => {
+    if (!mapLoaded || isLoading) {
+      return;
+    }
+
+    recenterMap();
+  }, [
+    animationToken,
+    endCoordinate,
+    isLoading,
+    mapLoaded,
+    recenterMap,
+    startCoordinate,
+  ]);
 
   return (
     <div className="absolute inset-0 h-full w-full">
@@ -546,6 +562,7 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
         initialViewState={initialViewState}
         mapStyle={MAP_STYLE}
         style={{ width: "100%", height: "100%" }}
+        onLoad={() => setMapLoaded(true)}
       >
         <Source
           id={EXPANSION_SOURCE_ID}

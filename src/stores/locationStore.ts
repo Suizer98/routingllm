@@ -42,6 +42,27 @@ export function waitForEndpointMutations(): Promise<void> {
 function bumpResolveGeneration() {
   resolveGeneration += 1;
   resetRoadGraphCache();
+  invalidateActiveRoute();
+}
+
+function invalidateActiveRoute() {
+  void import("@/stores/routingStore").then(({ useRoutingStore }) => {
+    const { route } = useRoutingStore.getState();
+    if (!route) {
+      return;
+    }
+
+    useRoutingStore.setState({
+      route: null,
+      comparisons: [],
+      optimalDistanceKm: null,
+      routeProgress: 0,
+      pulsePhase: 0,
+      isAnimating: false,
+      isAnimationPaused: false,
+      routeError: null,
+    });
+  });
 }
 
 function withResolvedCoordinate(
