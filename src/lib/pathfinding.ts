@@ -68,10 +68,7 @@ class MinHeap {
         break;
       }
 
-      [this.items[parent], this.items[current]] = [
-        this.items[current],
-        this.items[parent],
-      ];
+      [this.items[parent], this.items[current]] = [this.items[current], this.items[parent]];
       current = parent;
     }
   }
@@ -84,17 +81,11 @@ class MinHeap {
       const right = left + 1;
       let smallest = current;
 
-      if (
-        left < this.items.length &&
-        this.items[left].priority < this.items[smallest].priority
-      ) {
+      if (left < this.items.length && this.items[left].priority < this.items[smallest].priority) {
         smallest = left;
       }
 
-      if (
-        right < this.items.length &&
-        this.items[right].priority < this.items[smallest].priority
-      ) {
+      if (right < this.items.length && this.items[right].priority < this.items[smallest].priority) {
         smallest = right;
       }
 
@@ -102,20 +93,13 @@ class MinHeap {
         break;
       }
 
-      [this.items[current], this.items[smallest]] = [
-        this.items[smallest],
-        this.items[current],
-      ];
+      [this.items[current], this.items[smallest]] = [this.items[smallest], this.items[current]];
       current = smallest;
     }
   }
 }
 
-function reconstructPath(
-  graph: RoadGraph,
-  previous: Map<number, number>,
-  goalId: number,
-) {
+function reconstructPath(graph: RoadGraph, previous: Map<number, number>, goalId: number) {
   const path: number[] = [];
   let current: number | undefined = goalId;
 
@@ -124,9 +108,7 @@ function reconstructPath(
     current = previous.get(current);
   }
 
-  const coordinates = path.map((nodeId) =>
-    graphNodeCoordinate(graph, nodeId, graph.startCoordinate),
-  );
+  const coordinates = path.map((nodeId) => graphNodeCoordinate(graph, nodeId, graph.startCoordinate));
   return {
     path,
     coordinates,
@@ -134,14 +116,7 @@ function reconstructPath(
   };
 }
 
-function pushExpansionEdge(
-  expansionEdges: ExpansionEdge[],
-  from: [number, number],
-  to: [number, number],
-  fromId: number,
-  toId: number,
-  layer: number,
-) {
+function pushExpansionEdge(expansionEdges: ExpansionEdge[], from: [number, number], to: [number, number], fromId: number, toId: number, layer: number) {
   expansionEdges.push({
     from,
     to,
@@ -152,12 +127,7 @@ function pushExpansionEdge(
   });
 }
 
-function collectGoalPathSteps(
-  expansionEdges: ExpansionEdge[],
-  previous: Map<number, number>,
-  startId: number,
-  goalId: number,
-) {
+function collectGoalPathSteps(expansionEdges: ExpansionEdge[], previous: Map<number, number>, startId: number, goalId: number) {
   const goalPathSteps: number[] = [];
   const goalPathLayers = new Set<number>([0]);
   let node: number | undefined = goalId;
@@ -168,9 +138,7 @@ function collectGoalPathSteps(
       break;
     }
 
-    const match = expansionEdges.find(
-      (edge) => edge.fromId === parent && edge.toId === node,
-    );
+    const match = expansionEdges.find((edge) => edge.fromId === parent && edge.toId === node);
     if (match) {
       goalPathSteps.unshift(match.step);
       goalPathLayers.add(match.layer);
@@ -199,11 +167,7 @@ export function buildWavefrontExpansion(graph: RoadGraph): WavefrontExpansion {
 
   outer: while (queue.length > 0) {
     const current = queue.shift()!;
-    const currentCoord = graphNodeCoordinate(
-      graph,
-      current,
-      graph.startCoordinate,
-    );
+    const currentCoord = graphNodeCoordinate(graph, current, graph.startCoordinate);
     const currentLayer = depth.get(current) ?? 0;
 
     for (const edge of adjacency.get(current) ?? []) {
@@ -217,24 +181,12 @@ export function buildWavefrontExpansion(graph: RoadGraph): WavefrontExpansion {
       depth.set(edge.to, layer);
       previous.set(edge.to, current);
       queue.push(edge.to);
-      pushExpansionEdge(
-        expansionEdges,
-        currentCoord,
-        toCoord,
-        current,
-        edge.to,
-        layer,
-      );
+      pushExpansionEdge(expansionEdges, currentCoord, toCoord, current, edge.to, layer);
 
       if (edge.to === goalId) {
         goalReachedStep = expansionEdges.length - 1;
         goalReachedLayer = layer;
-        const goalPath = collectGoalPathSteps(
-          expansionEdges,
-          previous,
-          startId,
-          goalId,
-        );
+        const goalPath = collectGoalPathSteps(expansionEdges, previous, startId, goalId);
         goalPathSteps = goalPath.goalPathSteps;
         goalPathLayers = goalPath.goalPathLayers;
         break outer;
@@ -345,10 +297,7 @@ export function runAStar(graph: RoadGraph): PathfindingResult {
       if (tentativeG < (gScore.get(edge.to) ?? Infinity)) {
         gScore.set(edge.to, tentativeG);
         previous.set(edge.to, current);
-        queue.push(
-          tentativeG + graphHeuristic(graph, edge.to, goalId),
-          edge.to,
-        );
+        queue.push(tentativeG + graphHeuristic(graph, edge.to, goalId), edge.to);
       }
     }
   }
@@ -408,11 +357,7 @@ export function runGreedyBestFirst(graph: RoadGraph): PathfindingResult {
   };
 }
 
-export function buildExpansionEdgeCollection(
-  edges: ExpansionEdge[],
-  flashByStep: globalThis.Map<number, number> = new globalThis.Map(),
-  maxStep = Infinity,
-): FeatureCollection {
+export function buildExpansionEdgeCollection(edges: ExpansionEdge[], flashByStep: globalThis.Map<number, number> = new globalThis.Map(), maxStep = Infinity): FeatureCollection {
   return {
     type: "FeatureCollection",
     features: edges.map((edge) => ({
@@ -430,12 +375,7 @@ export function buildExpansionEdgeCollection(
   };
 }
 
-export function buildSettledFlashMap(
-  edges: ExpansionEdge[],
-  goalPathSteps: number[],
-  offPathFlash = 0.42,
-  onPathFlash = 0.75,
-): globalThis.Map<number, number> {
+export function buildSettledFlashMap(edges: ExpansionEdge[], goalPathSteps: number[], offPathFlash = 0.42, onPathFlash = 0.75): globalThis.Map<number, number> {
   const goalPathSet = new Set(goalPathSteps);
   const flashByStep = new globalThis.Map<number, number>();
 
@@ -453,7 +393,7 @@ export function buildExpansionNodeCollection(
   edges: ExpansionEdge[],
   origin: [number, number],
   flashByStep: globalThis.Map<number, number> = new globalThis.Map(),
-  maxStep = Infinity,
+  maxStep = Infinity
 ): FeatureCollection {
   const seen = new Map<string, number>();
   const features: FeatureCollection["features"] = [
@@ -496,16 +436,10 @@ export function buildExpansionNodeCollection(
   return { type: "FeatureCollection", features };
 }
 
-export function sliceLineString(
-  geometry: Feature<LineString>,
-  progress: number,
-): Feature<LineString> {
+export function sliceLineString(geometry: Feature<LineString>, progress: number): Feature<LineString> {
   const coordinates = geometry.geometry.coordinates as [number, number][];
   const clampedProgress = Math.min(Math.max(progress, 0), 1);
-  const targetCount = Math.max(
-    2,
-    Math.ceil((coordinates.length - 1) * clampedProgress) + 1,
-  );
+  const targetCount = Math.max(2, Math.ceil((coordinates.length - 1) * clampedProgress) + 1);
 
   return {
     ...geometry,

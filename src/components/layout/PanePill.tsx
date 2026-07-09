@@ -13,11 +13,5 @@ const toneClasses: Record<PanePillTone, string> = {
 };
 
 export function PanePill({ label, tone = "muted" }: PanePillProps) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.6875rem] font-semibold whitespace-nowrap ${toneClasses[tone]}`}
-    >
-      {label}
-    </span>
-  );
+  return <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.6875rem] font-semibold whitespace-nowrap ${toneClasses[tone]}`}>{label}</span>;
 }

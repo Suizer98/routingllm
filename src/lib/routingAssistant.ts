@@ -2,11 +2,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
 
-import {
-  createRouteEndpoint,
-  geocodePlace,
-  shortLabelFromPlace,
-} from "@/lib/geocoding";
+import { createRouteEndpoint, geocodePlace, shortLabelFromPlace } from "@/lib/geocoding";
 import { useLocationStore } from "@/stores/locationStore";
 import { useRoutingStore } from "@/stores/routingStore";
 import type { RoutingAlgorithmId } from "@/types/routing";
@@ -33,10 +29,7 @@ const routingTools = {
       endPlace: z.string().describe("End city or place name"),
     }),
     execute: async ({ startPlace, endPlace }) => {
-      const [startHit, endHit] = await Promise.all([
-        geocodePlace(startPlace),
-        geocodePlace(endPlace),
-      ]);
+      const [startHit, endHit] = await Promise.all([geocodePlace(startPlace), geocodePlace(endPlace)]);
 
       if (!startHit) {
         return { ok: false as const, message: `Could not find "${startPlace}"` };
@@ -47,18 +40,8 @@ const routingTools = {
 
       const locationStore = useLocationStore.getState();
       locationStore.setRouteEndpoints(
-        createRouteEndpoint(
-          "start",
-          startHit.label,
-          shortLabelFromPlace(startHit.label),
-          startHit.coordinate,
-        ),
-        createRouteEndpoint(
-          "end",
-          endHit.label,
-          shortLabelFromPlace(endHit.label),
-          endHit.coordinate,
-        ),
+        createRouteEndpoint("start", startHit.label, shortLabelFromPlace(startHit.label), startHit.coordinate),
+        createRouteEndpoint("end", endHit.label, shortLabelFromPlace(endHit.label), endHit.coordinate)
       );
       await locationStore.resolveEndpoints();
 
@@ -81,12 +64,7 @@ const routingTools = {
         return { ok: false as const, message: `Could not find "${place}"` };
       }
 
-      const endpoint = createRouteEndpoint(
-        role,
-        hit.label,
-        shortLabelFromPlace(hit.label),
-        hit.coordinate,
-      );
+      const endpoint = createRouteEndpoint(role, hit.label, shortLabelFromPlace(hit.label), hit.coordinate);
       const locationStore = useLocationStore.getState();
       if (role === "start") {
         locationStore.setStart(endpoint);
@@ -103,9 +81,7 @@ const routingTools = {
       algorithm: z.enum(["dijkstra", "astar", "greedy-best-first"]),
     }),
     execute: async ({ algorithm }) => {
-      useRoutingStore
-        .getState()
-        .setSelectedAlgorithm(algorithm as RoutingAlgorithmId);
+      useRoutingStore.getState().setSelectedAlgorithm(algorithm as RoutingAlgorithmId);
       return { ok: true as const, algorithm };
     },
   }),

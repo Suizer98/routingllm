@@ -1,12 +1,6 @@
 import type { Plugin } from "vite";
 
-const cjsInteropPackages = [
-  "inline-style-prefixer",
-  "css-in-js-utils",
-  "hyphenate-style-name",
-  "fbjs",
-  "react-native-svg",
-];
+const cjsInteropPackages = ["inline-style-prefixer", "css-in-js-utils", "hyphenate-style-name", "fbjs", "react-native-svg"];
 
 function appendNamedExports(code: string) {
   if (!code.includes("const __cjsExport =")) {

@@ -17,10 +17,7 @@ const tabs: Array<{ id: PaneTab; label: string }> = [
 
 export function PaneTabs({ activeTab, onTabChange }: PaneTabsProps) {
   return (
-    <div
-      className="flex gap-1 rounded-full border border-slate-700 bg-slate-800 p-1"
-      role="tablist"
-    >
+    <div className="flex gap-1 rounded-full border border-slate-700 bg-slate-800 p-1" role="tablist">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -28,12 +25,9 @@ export function PaneTabs({ activeTab, onTabChange }: PaneTabsProps) {
           role="tab"
           aria-selected={activeTab === tab.id}
           className={`flex-1 cursor-pointer rounded-full border-none px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-            activeTab === tab.id
-              ? "bg-slate-900 font-semibold text-slate-100"
-              : "bg-transparent text-slate-400 hover:text-slate-100"
+            activeTab === tab.id ? "bg-slate-900 font-semibold text-slate-100" : "bg-transparent text-slate-400 hover:text-slate-100"
           }`}
-          onClick={() => onTabChange(tab.id)}
-        >
+          onClick={() => onTabChange(tab.id)}>
           {tab.label}
         </button>
       ))}
@@ -66,9 +60,7 @@ type PaneCardProps = {
 export function PaneCard({ title, children }: PaneCardProps) {
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
-      <h2 className="m-0 mb-3 text-[0.6875rem] font-bold tracking-widest text-slate-400 uppercase">
-        {title}
-      </h2>
+      <h2 className="m-0 mb-3 text-[0.6875rem] font-bold tracking-widest text-slate-400 uppercase">{title}</h2>
       {children}
     </section>
   );

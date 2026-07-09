@@ -69,8 +69,7 @@ function App() {
         className="fixed top-4 z-[4] flex h-[42px] w-[42px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800 p-0 shadow-lg transition-[left,background-color] duration-200 ease-out hover:bg-slate-700/80"
         onClick={() => setPaneOpen((value) => !value)}
         aria-label={paneOpen ? "Collapse left pane" : "Expand left pane"}
-        style={{ left: mapChromeInsetLeft }}
-      >
+        style={{ left: mapChromeInsetLeft }}>
         <span className="h-0.5 w-4 rounded-full bg-slate-100" />
         <span className="h-0.5 w-4 rounded-full bg-slate-100" />
         <span className="h-0.5 w-4 rounded-full bg-slate-100" />

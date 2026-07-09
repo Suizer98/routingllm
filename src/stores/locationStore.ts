@@ -1,11 +1,6 @@
 import { create } from "zustand";
 
-import {
-  DEFAULT_END,
-  DEFAULT_START,
-  endpointCoordinate,
-  resolveRouteEndpoints,
-} from "@/lib/geocoding";
+import { DEFAULT_END, DEFAULT_START, endpointCoordinate, resolveRouteEndpoints } from "@/lib/geocoding";
 import { resetRoadGraphCache } from "@/lib/roadGraph";
 import type { RouteEndpoint } from "@/types/location";
 
@@ -17,10 +12,7 @@ type LocationStore = {
   setEnd: (endpoint: RouteEndpoint) => void;
   setRouteEndpoints: (start: RouteEndpoint, end: RouteEndpoint) => void;
   resolveEndpoints: () => Promise<void>;
-  applyGraphCoordinates: (
-    startCoordinate: [number, number],
-    endCoordinate: [number, number],
-  ) => void;
+  applyGraphCoordinates: (startCoordinate: [number, number], endCoordinate: [number, number]) => void;
 };
 
 let endpointMutationChain: Promise<void> = Promise.resolve();
@@ -30,7 +22,7 @@ function enqueueEndpointMutation<T>(work: () => Promise<T>): Promise<T> {
   const run = endpointMutationChain.then(work);
   endpointMutationChain = run.then(
     () => undefined,
-    () => undefined,
+    () => undefined
   );
   return run;
 }
@@ -65,10 +57,7 @@ function invalidateActiveRoute() {
   });
 }
 
-function withResolvedCoordinate(
-  endpoint: RouteEndpoint,
-  coordinate: [number, number],
-): RouteEndpoint {
+function withResolvedCoordinate(endpoint: RouteEndpoint, coordinate: [number, number]): RouteEndpoint {
   return {
     ...endpoint,
     resolvedCoordinate: coordinate,

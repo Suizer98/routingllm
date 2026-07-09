@@ -1,15 +1,8 @@
 import { create } from "zustand";
 
-import {
-  compareRoutingAlgorithms,
-  ROUTING_ALGORITHMS,
-} from "@/lib/routingAlgorithms";
+import { compareRoutingAlgorithms, ROUTING_ALGORITHMS } from "@/lib/routingAlgorithms";
 import { waitForEndpointMutations } from "@/stores/locationStore";
-import type {
-  RouteComparison,
-  RouteResult,
-  RoutingAlgorithmId,
-} from "@/types/routing";
+import type { RouteComparison, RouteResult, RoutingAlgorithmId } from "@/types/routing";
 
 type RoutingStore = {
   selectedAlgorithm: RoutingAlgorithmId;
@@ -82,9 +75,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
     try {
       await waitForEndpointMutations();
       const { comparisons, optimalDistanceKm } = await compareRoutingAlgorithms();
-      const selected = comparisons.find(
-        (item) => item.algorithmId === selectedAlgorithm,
-      );
+      const selected = comparisons.find((item) => item.algorithmId === selectedAlgorithm);
 
       if (!selected) {
         throw new Error("Algorithm result not found");
@@ -102,8 +93,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
         animationToken: animationToken + 1,
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to calculate route";
+      const message = error instanceof Error ? error.message : "Failed to calculate route";
 
       set({
         isLoading: false,
@@ -123,8 +113,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
       set({ isAnimationPaused: false });
     }
   },
-  setAnimationFrame: (routeProgress, pulsePhase) =>
-    set({ routeProgress, pulsePhase }),
+  setAnimationFrame: (routeProgress, pulsePhase) => set({ routeProgress, pulsePhase }),
   finishAnimation: () =>
     set({
       isAnimating: false,
@@ -135,8 +124,5 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
 }));
 
 export function getAlgorithmLabel(algorithmId: RoutingAlgorithmId) {
-  return (
-    ROUTING_ALGORITHMS.find((algorithm) => algorithm.id === algorithmId)?.name ??
-    algorithmId
-  );
+  return ROUTING_ALGORITHMS.find((algorithm) => algorithm.id === algorithmId)?.name ?? algorithmId;
 }

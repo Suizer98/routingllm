@@ -10,9 +10,7 @@ export function LayerList() {
   const selectedAlgorithm = useRoutingStore((state) => state.selectedAlgorithm);
   const start = useLocationStore((state) => state.start);
   const end = useLocationStore((state) => state.end);
-  const routeColor =
-    ROUTING_ALGORITHMS.find((algorithm) => algorithm.id === selectedAlgorithm)
-      ?.color ?? theme.accent;
+  const routeColor = ROUTING_ALGORITHMS.find((algorithm) => algorithm.id === selectedAlgorithm)?.color ?? theme.accent;
 
   const layerLabel = (layerId: string, fallback: string) => {
     if (layerId === "start") {
@@ -31,36 +29,23 @@ export function LayerList() {
           key={layer.id}
           type="button"
           className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-none bg-transparent p-2 text-left transition-colors duration-150 hover:bg-slate-700/60"
-          onClick={() => toggleLayer(layer.id)}
-        >
+          onClick={() => toggleLayer(layer.id)}>
           <span
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 text-[0.625rem] font-bold ${
-              layer.visible
-                ? "border-sky-400 bg-sky-400 text-slate-900"
-                : "border-slate-700 bg-transparent text-transparent"
+              layer.visible ? "border-sky-400 bg-sky-400 text-slate-900" : "border-slate-700 bg-transparent text-transparent"
             }`}
-            aria-hidden
-          >
+            aria-hidden>
             {layer.visible ? "✓" : ""}
           </span>
 
           <span
-            className={`shrink-0 rounded-full ${
-              layer.kind === "line" ? "h-1 w-[18px]" : "h-2.5 w-2.5"
-            }`}
+            className={`shrink-0 rounded-full ${layer.kind === "line" ? "h-1 w-[18px]" : "h-2.5 w-2.5"}`}
             style={{
-              background:
-                layer.id === "route"
-                  ? routeColor
-                  : layer.id === "end"
-                    ? "#f87171"
-                    : "#4ade80",
+              background: layer.id === "route" ? routeColor : layer.id === "end" ? "#f87171" : "#4ade80",
             }}
           />
 
-          <span className="flex-1 text-sm text-slate-100">
-            {layerLabel(layer.id, layer.name)}
-          </span>
+          <span className="flex-1 text-sm text-slate-100">{layerLabel(layer.id, layer.name)}</span>
         </button>
       ))}
     </div>

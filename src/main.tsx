@@ -11,5 +11,5 @@ createRoot(document.getElementById("root")!).render(
     <GluestackUIProvider config={config}>
       <App />
     </GluestackUIProvider>
-  </StrictMode>,
+  </StrictMode>
 );

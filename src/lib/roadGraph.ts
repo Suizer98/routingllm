@@ -1,12 +1,7 @@
 import type { LineString } from "geojson";
 
 import { endpointCoordinate } from "@/lib/geocoding";
-import {
-  bearingRadians,
-  haversineKm,
-  isReasonableRoute,
-  isWaypointAlongCorridor,
-} from "@/lib/geo";
+import { bearingRadians, haversineKm, isReasonableRoute, isWaypointAlongCorridor } from "@/lib/geo";
 import type { RouteEndpoint } from "@/types/location";
 
 export type GraphNode = {
@@ -44,13 +39,7 @@ const BATU_PAHAT: [number, number] = [102.9325, 1.8548];
 const KUANTAN: [number, number] = [103.332, 3.8077];
 const IPOH: [number, number] = [101.0901, 4.5975];
 
-const ROUTE_HUB_WAYPOINTS: [number, number][] = [
-  MALACCA,
-  SEREMBAN,
-  BATU_PAHAT,
-  IPOH,
-  KUANTAN,
-];
+const ROUTE_HUB_WAYPOINTS: [number, number][] = [MALACCA, SEREMBAN, BATU_PAHAT, IPOH, KUANTAN];
 
 const GRAPH_VERSION = 9;
 
@@ -69,10 +58,7 @@ function formatCoordinate([lng, lat]: [number, number]) {
   return `${lng},${lat}`;
 }
 
-async function fetchDrivingRoutes(
-  waypoints: [number, number][],
-  alternatives: number,
-): Promise<[number, number][][]> {
+async function fetchDrivingRoutes(waypoints: [number, number][], alternatives: number): Promise<[number, number][][]> {
   const coordinates = waypoints.map(formatCoordinate).join(";");
   const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=${alternatives}`;
 
@@ -86,9 +72,7 @@ async function fetchDrivingRoutes(
     return [];
   }
 
-  return data.routes.map(
-    (route) => route.geometry.coordinates as [number, number][],
-  );
+  return data.routes.map((route) => route.geometry.coordinates as [number, number][]);
 }
 
 function sampleBackbone(coordinates: [number, number][], targetCount: number) {
@@ -106,11 +90,7 @@ function sampleBackbone(coordinates: [number, number][], targetCount: number) {
   return sampled;
 }
 
-function bearingDeltaDegrees(
-  previous: [number, number],
-  current: [number, number],
-  next: [number, number],
-) {
+function bearingDeltaDegrees(previous: [number, number], current: [number, number], next: [number, number]) {
   const inBearing = bearingRadians(previous, current);
   const outBearing = bearingRadians(current, next);
   let delta = Math.abs(outBearing - inBearing);
@@ -120,14 +100,8 @@ function bearingDeltaDegrees(
   return (delta * 180) / Math.PI;
 }
 
-function sampleWithCurvaturePriority(
-  coordinates: [number, number][],
-  keep: boolean[],
-  maxPoints: number,
-) {
-  const requiredIndices = keep
-    .map((value, index) => (value ? index : -1))
-    .filter((index) => index >= 0);
+function sampleWithCurvaturePriority(coordinates: [number, number][], keep: boolean[], maxPoints: number) {
+  const requiredIndices = keep.map((value, index) => (value ? index : -1)).filter((index) => index >= 0);
 
   if (requiredIndices.length >= maxPoints) {
     return sampleBackbone(coordinates, maxPoints);
@@ -154,12 +128,7 @@ function sampleWithCurvaturePriority(
     .map((index) => coordinates[index]);
 }
 
-function preserveCurvatureAndSpacing(
-  coordinates: [number, number][],
-  maxSpacingKm: number,
-  maxPoints: number,
-  minTurnDegrees = MIN_CURVE_DEGREES,
-) {
+function preserveCurvatureAndSpacing(coordinates: [number, number][], maxSpacingKm: number, maxPoints: number, minTurnDegrees = MIN_CURVE_DEGREES) {
   if (coordinates.length <= 2) {
     return coordinates;
   }
@@ -169,13 +138,7 @@ function preserveCurvatureAndSpacing(
       return true;
     }
 
-    return (
-      bearingDeltaDegrees(
-        coordinates[index - 1],
-        coordinates[index],
-        coordinates[index + 1],
-      ) >= minTurnDegrees
-    );
+    return bearingDeltaDegrees(coordinates[index - 1], coordinates[index], coordinates[index + 1]) >= minTurnDegrees;
   });
 
   const detailed: [number, number][] = [coordinates[0]];
@@ -198,12 +161,7 @@ function preserveCurvatureAndSpacing(
   return detailed;
 }
 
-function addEdge(
-  adjacency: Map<number, GraphEdge[]>,
-  from: number,
-  to: number,
-  weight: number,
-) {
+function addEdge(adjacency: Map<number, GraphEdge[]>, from: number, to: number, weight: number) {
   if (from === to) {
     return;
   }
@@ -217,12 +175,7 @@ function addEdge(
   adjacency.set(from, edges);
 }
 
-function addBidirectionalEdge(
-  adjacency: Map<number, GraphEdge[]>,
-  from: number,
-  to: number,
-  weight: number,
-) {
+function addBidirectionalEdge(adjacency: Map<number, GraphEdge[]>, from: number, to: number, weight: number) {
   addEdge(adjacency, from, to, weight);
   addEdge(adjacency, to, from, weight);
 }
@@ -242,12 +195,7 @@ function nearestNodeId(nodes: GraphNode[], target: [number, number]) {
   return bestId;
 }
 
-function findNearbyNodeIdSameRoute(
-  nodes: GraphNode[],
-  coordinate: [number, number],
-  routeId: number,
-  maxDistanceKm: number,
-) {
+function findNearbyNodeIdSameRoute(nodes: GraphNode[], coordinate: [number, number], routeId: number, maxDistanceKm: number) {
   let bestId: number | null = null;
   let bestDistance = maxDistanceKm;
 
@@ -266,18 +214,8 @@ function findNearbyNodeIdSameRoute(
   return bestId;
 }
 
-function getOrCreateNode(
-  coordinate: [number, number],
-  routeId: number,
-  nodes: GraphNode[],
-  mergeKm = NODE_MERGE_KM,
-) {
-  const existing = findNearbyNodeIdSameRoute(
-    nodes,
-    coordinate,
-    routeId,
-    mergeKm,
-  );
+function getOrCreateNode(coordinate: [number, number], routeId: number, nodes: GraphNode[], mergeKm = NODE_MERGE_KM) {
+  const existing = findNearbyNodeIdSameRoute(nodes, coordinate, routeId, mergeKm);
   if (existing !== null) {
     return existing;
   }
@@ -295,23 +233,16 @@ function addRouteChain(
   spacingKm: number,
   maxPoints: number,
   weightFactor: number,
-  minTurnDegrees = MIN_CURVE_DEGREES,
+  minTurnDegrees = MIN_CURVE_DEGREES
 ) {
-  const sampled = preserveCurvatureAndSpacing(
-    coordinates,
-    spacingKm,
-    maxPoints,
-    minTurnDegrees,
-  );
+  const sampled = preserveCurvatureAndSpacing(coordinates, spacingKm, maxPoints, minTurnDegrees);
   let previousId: number | null = null;
 
   for (const coordinate of sampled) {
     const nodeId = getOrCreateNode(coordinate, routeId, nodes);
 
     if (previousId !== null && previousId !== nodeId) {
-      const weight =
-        haversineKm(nodes[previousId].coordinate, nodes[nodeId].coordinate) *
-        weightFactor;
+      const weight = haversineKm(nodes[previousId].coordinate, nodes[nodeId].coordinate) * weightFactor;
       addBidirectionalEdge(adjacency, previousId, nodeId, weight);
     }
 
@@ -319,11 +250,7 @@ function addRouteChain(
   }
 }
 
-function nearestAmongNodeIds(
-  nodes: GraphNode[],
-  nodeIds: number[],
-  target: [number, number],
-) {
+function nearestAmongNodeIds(nodes: GraphNode[], nodeIds: number[], target: [number, number]) {
   let bestId = nodeIds[0];
   let bestDistance = haversineKm(nodes[bestId].coordinate, target);
 
@@ -338,28 +265,13 @@ function nearestAmongNodeIds(
   return bestId;
 }
 
-function connectEndpointHub(
-  nodes: GraphNode[],
-  adjacency: Map<number, GraphEdge[]>,
-  target: [number, number],
-  radiusKm: number,
-) {
-  const hubIds = nodes
-    .filter((node) => haversineKm(node.coordinate, target) <= radiusKm)
-    .map((node) => node.id);
+function connectEndpointHub(nodes: GraphNode[], adjacency: Map<number, GraphEdge[]>, target: [number, number], radiusKm: number) {
+  const hubIds = nodes.filter((node) => haversineKm(node.coordinate, target) <= radiusKm).map((node) => node.id);
 
   for (let index = 0; index < hubIds.length; index += 1) {
     for (let otherIndex = index + 1; otherIndex < hubIds.length; otherIndex += 1) {
-      const weight = haversineKm(
-        nodes[hubIds[index]].coordinate,
-        nodes[hubIds[otherIndex]].coordinate,
-      );
-      addBidirectionalEdge(
-        adjacency,
-        hubIds[index],
-        hubIds[otherIndex],
-        weight * 1.05,
-      );
+      const weight = haversineKm(nodes[hubIds[index]].coordinate, nodes[hubIds[otherIndex]].coordinate);
+      addBidirectionalEdge(adjacency, hubIds[index], hubIds[otherIndex], weight * 1.05);
     }
   }
 
@@ -370,11 +282,7 @@ function connectEndpointHub(
   return nearestAmongNodeIds(nodes, hubIds, target);
 }
 
-function connectRouteJunctions(
-  nodes: GraphNode[],
-  adjacency: Map<number, GraphEdge[]>,
-  thresholdKm: number,
-) {
+function connectRouteJunctions(nodes: GraphNode[], adjacency: Map<number, GraphEdge[]>, thresholdKm: number) {
   for (let index = 0; index < nodes.length; index += 1) {
     const node = nodes[index];
 
@@ -386,12 +294,7 @@ function connectRouteJunctions(
 
       const distance = haversineKm(node.coordinate, other.coordinate);
       if (distance <= thresholdKm) {
-        addBidirectionalEdge(
-          adjacency,
-          node.id,
-          other.id,
-          distance * 1.12,
-        );
+        addBidirectionalEdge(adjacency, node.id, other.id, distance * 1.12);
       }
     }
   }
@@ -404,30 +307,17 @@ function routeSignature(coordinates: [number, number][]) {
   return `${start[0].toFixed(2)},${start[1].toFixed(2)}-${mid[0].toFixed(2)},${mid[1].toFixed(2)}-${end[0].toFixed(2)},${end[1].toFixed(2)}-${coordinates.length}`;
 }
 
-async function fetchAllRoadPolylines(
-  start: [number, number],
-  end: [number, number],
-): Promise<[number, number][][]> {
-  const midpoint: [number, number] = [
-    (start[0] + end[0]) / 2,
-    (start[1] + end[1]) / 2,
-  ];
-  const quarter: [number, number] = [
-    start[0] + (end[0] - start[0]) * 0.33,
-    start[1] + (end[1] - start[1]) * 0.33,
-  ];
-  const threeQuarter: [number, number] = [
-    start[0] + (end[0] - start[0]) * 0.67,
-    start[1] + (end[1] - start[1]) * 0.67,
-  ];
+async function fetchAllRoadPolylines(start: [number, number], end: [number, number]): Promise<[number, number][][]> {
+  const midpoint: [number, number] = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
+  const quarter: [number, number] = [start[0] + (end[0] - start[0]) * 0.33, start[1] + (end[1] - start[1]) * 0.33];
+  const threeQuarter: [number, number] = [start[0] + (end[0] - start[0]) * 0.67, start[1] + (end[1] - start[1]) * 0.67];
 
-  const queries: Array<{ waypoints: [number, number][]; alternatives: number }> =
-    [
-      { waypoints: [start, end], alternatives: 3 },
-      { waypoints: [start, quarter, end], alternatives: 2 },
-      { waypoints: [start, midpoint, end], alternatives: 2 },
-      { waypoints: [start, threeQuarter, end], alternatives: 2 },
-    ];
+  const queries: Array<{ waypoints: [number, number][]; alternatives: number }> = [
+    { waypoints: [start, end], alternatives: 3 },
+    { waypoints: [start, quarter, end], alternatives: 2 },
+    { waypoints: [start, midpoint, end], alternatives: 2 },
+    { waypoints: [start, threeQuarter, end], alternatives: 2 },
+  ];
 
   for (const hub of ROUTE_HUB_WAYPOINTS) {
     if (!isWaypointAlongCorridor(hub, start, end)) {
@@ -437,11 +327,7 @@ async function fetchAllRoadPolylines(
     queries.push({ waypoints: [start, hub, end], alternatives: 2 });
   }
 
-  const results = await Promise.all(
-    queries.map((query) =>
-      fetchDrivingRoutes(query.waypoints, query.alternatives),
-    ),
-  );
+  const results = await Promise.all(queries.map((query) => fetchDrivingRoutes(query.waypoints, query.alternatives)));
 
   const unique: [number, number][][] = [];
   const seen = new Set<string>();
@@ -474,10 +360,7 @@ function graphCacheKey(start: RouteEndpoint, end: RouteEndpoint) {
   return `${startCoord[0].toFixed(4)},${startCoord[1].toFixed(4)}-${endCoord[0].toFixed(4)},${endCoord[1].toFixed(4)}`;
 }
 
-async function buildGraphFromRoads(
-  start: RouteEndpoint,
-  end: RouteEndpoint,
-): Promise<RoadGraph> {
+async function buildGraphFromRoads(start: RouteEndpoint, end: RouteEndpoint): Promise<RoadGraph> {
   const startCoord = endpointCoordinate(start);
   const endCoord = endpointCoordinate(end);
   const routes = await fetchAllRoadPolylines(startCoord, endCoord);
@@ -494,7 +377,7 @@ async function buildGraphFromRoads(
       isPrimary ? PRIMARY_ROUTE_SPACING_KM : ALTERNATE_ROUTE_SPACING_KM,
       isPrimary ? PRIMARY_ROUTE_MAX_POINTS : ALTERNATE_ROUTE_MAX_POINTS,
       0.92 + (routeIndex % 4) * 0.03,
-      isPrimary ? MIN_CURVE_DEGREES : MIN_CURVE_DEGREES + 1,
+      isPrimary ? MIN_CURVE_DEGREES : MIN_CURVE_DEGREES + 1
     );
   });
 
@@ -513,16 +396,9 @@ async function buildGraphFromRoads(
   };
 }
 
-export async function buildRoadGraph(
-  start: RouteEndpoint,
-  end: RouteEndpoint,
-): Promise<RoadGraph> {
+export async function buildRoadGraph(start: RouteEndpoint, end: RouteEndpoint): Promise<RoadGraph> {
   const cacheKey = graphCacheKey(start, end);
-  if (
-    cachedGraph &&
-    cachedGraphVersion === GRAPH_VERSION &&
-    cachedGraphKey === cacheKey
-  ) {
+  if (cachedGraph && cachedGraphVersion === GRAPH_VERSION && cachedGraphKey === cacheKey) {
     return cachedGraph;
   }
 
@@ -532,19 +408,12 @@ export async function buildRoadGraph(
   return cachedGraph;
 }
 
-export function graphNodeCoordinate(
-  graph: RoadGraph,
-  nodeId: number,
-  fallback: [number, number],
-) {
+export function graphNodeCoordinate(graph: RoadGraph, nodeId: number, fallback: [number, number]) {
   return graph.nodes[nodeId]?.coordinate ?? fallback;
 }
 
 export function graphHeuristic(graph: RoadGraph, nodeId: number, goalId: number) {
-  return haversineKm(
-    graph.nodes[nodeId].coordinate,
-    graph.nodes[goalId].coordinate,
-  );
+  return haversineKm(graph.nodes[nodeId].coordinate, graph.nodes[goalId].coordinate);
 }
 
 export function resetRoadGraphCache() {

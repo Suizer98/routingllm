@@ -7,12 +7,7 @@ type OsrmNearestResponse = {
   }>;
 };
 
-export function createRouteEndpoint(
-  id: RouteEndpointId,
-  label: string,
-  shortLabel: string,
-  coordinate: [number, number],
-): RouteEndpoint {
+export function createRouteEndpoint(id: RouteEndpointId, label: string, shortLabel: string, coordinate: [number, number]): RouteEndpoint {
   return {
     id,
     label,
@@ -23,30 +18,16 @@ export function createRouteEndpoint(
   };
 }
 
-export const DEFAULT_START = createRouteEndpoint(
-  "start",
-  "Singapore",
-  "SG",
-  [103.8198, 1.3521],
-);
+export const DEFAULT_START = createRouteEndpoint("start", "Singapore", "SG", [103.8198, 1.3521]);
 
-export const DEFAULT_END = createRouteEndpoint(
-  "end",
-  "Kuala Lumpur",
-  "KL",
-  [101.6869, 3.139],
-);
+export const DEFAULT_END = createRouteEndpoint("end", "Kuala Lumpur", "KL", [101.6869, 3.139]);
 
 export function endpointCoordinate(endpoint: RouteEndpoint): [number, number] {
   return endpoint.resolvedCoordinate ?? endpoint.coordinate;
 }
 
 export function shortLabelFromPlace(label: string) {
-  const words = label
-    .split(",")[0]
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const words = label.split(",")[0].trim().split(/\s+/).filter(Boolean);
 
   if (words.length === 0) {
     return "???";
@@ -68,23 +49,18 @@ type NominatimResult = {
   display_name: string;
 };
 
-export async function geocodePlace(
-  query: string,
-): Promise<{ coordinate: [number, number]; label: string } | null> {
+export async function geocodePlace(query: string): Promise<{ coordinate: [number, number]; label: string } | null> {
   const params = new URLSearchParams({
     q: query,
     format: "json",
     limit: "1",
   });
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?${params}`,
-    {
-      headers: {
-        "Accept-Language": "en",
-        "User-Agent": "routingllm/0.1",
-      },
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    headers: {
+      "Accept-Language": "en",
+      "User-Agent": "routingllm/0.1",
     },
-  );
+  });
 
   if (!response.ok) {
     return null;
@@ -102,9 +78,7 @@ export async function geocodePlace(
   };
 }
 
-export async function snapToRoadNetwork(
-  coordinate: [number, number],
-): Promise<[number, number]> {
+export async function snapToRoadNetwork(coordinate: [number, number]): Promise<[number, number]> {
   const [lng, lat] = coordinate;
   const url = `https://router.project-osrm.org/nearest/v1/driving/${lng},${lat}?number=1`;
 
@@ -122,9 +96,7 @@ export async function snapToRoadNetwork(
   return snapped;
 }
 
-export async function resolveRouteEndpoint(
-  endpoint: RouteEndpoint,
-): Promise<RouteEndpoint> {
+export async function resolveRouteEndpoint(endpoint: RouteEndpoint): Promise<RouteEndpoint> {
   const resolvedCoordinate = await snapToRoadNetwork(endpoint.coordinate);
   return {
     ...endpoint,
@@ -132,14 +104,8 @@ export async function resolveRouteEndpoint(
   };
 }
 
-export async function resolveRouteEndpoints(
-  start: RouteEndpoint,
-  end: RouteEndpoint,
-): Promise<{ start: RouteEndpoint; end: RouteEndpoint }> {
-  const [resolvedStart, resolvedEnd] = await Promise.all([
-    resolveRouteEndpoint(start),
-    resolveRouteEndpoint(end),
-  ]);
+export async function resolveRouteEndpoints(start: RouteEndpoint, end: RouteEndpoint): Promise<{ start: RouteEndpoint; end: RouteEndpoint }> {
+  const [resolvedStart, resolvedEnd] = await Promise.all([resolveRouteEndpoint(start), resolveRouteEndpoint(end)]);
 
   return {
     start: resolvedStart,

@@ -1,19 +1,8 @@
-import type {
-  RouteComparison,
-  RouteResult,
-  RoutingAlgorithm,
-  RoutingAlgorithmId,
-} from "@/types/routing";
+import type { RouteComparison, RouteResult, RoutingAlgorithm, RoutingAlgorithmId } from "@/types/routing";
 import type { ExpansionEdge } from "@/lib/pathfinding";
 import { buildRoadGraph } from "@/lib/roadGraph";
 import { useLocationStore } from "@/stores/locationStore";
-import {
-  buildWavefrontExpansion,
-  runAStar,
-  runDijkstra,
-  runGreedyBestFirst,
-  sliceLineString,
-} from "@/lib/pathfinding";
+import { buildWavefrontExpansion, runAStar, runDijkstra, runGreedyBestFirst, sliceLineString } from "@/lib/pathfinding";
 
 export { sliceLineString };
 
@@ -59,7 +48,7 @@ function toRouteResult(
   goalReachedStep: number,
   goalReachedLayer: number,
   goalPathSteps: number[],
-  goalPathLayers: number[],
+  goalPathLayers: number[]
 ): RouteResult {
   const algorithm = getAlgorithm(algorithmId);
 
@@ -89,10 +78,7 @@ function toRouteResult(
   };
 }
 
-function runAlgorithm(
-  algorithmId: RoutingAlgorithmId,
-  graph: Awaited<ReturnType<typeof buildRoadGraph>>,
-) {
+function runAlgorithm(algorithmId: RoutingAlgorithmId, graph: Awaited<ReturnType<typeof buildRoadGraph>>) {
   switch (algorithmId) {
     case "dijkstra":
       return runDijkstra(graph);
@@ -137,7 +123,7 @@ export async function compareRoutingAlgorithms(): Promise<{
         wavefront.goalReachedStep,
         wavefront.goalReachedLayer,
         wavefront.goalPathSteps,
-        wavefront.goalPathLayers,
+        wavefront.goalPathLayers
       ),
     });
   }
@@ -145,9 +131,7 @@ export async function compareRoutingAlgorithms(): Promise<{
   return { comparisons, optimalDistanceKm };
 }
 
-export async function fetchRoadRoute(
-  algorithmId: RoutingAlgorithmId,
-): Promise<RouteResult> {
+export async function fetchRoadRoute(algorithmId: RoutingAlgorithmId): Promise<RouteResult> {
   const { comparisons } = await compareRoutingAlgorithms();
   const match = comparisons.find((item) => item.algorithmId === algorithmId);
 

@@ -4,10 +4,7 @@ type NativeComponentOptions = {
   excludedPlatforms?: string[];
 };
 
-export default function codegenNativeComponent<Props extends object>(
-  componentName: string,
-  options?: NativeComponentOptions,
-): (props: Props) => null {
+export default function codegenNativeComponent<Props extends object>(componentName: string, options?: NativeComponentOptions): (props: Props) => null {
   void componentName;
   void options;
 
