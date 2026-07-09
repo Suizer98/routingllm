@@ -16,11 +16,11 @@ Compare Dijkstra, A*, and Greedy Best-First on a live road graph between two cit
 
 ## Algorithms
 
-| Algorithm | Behavior |
-| --- | --- |
-| Dijkstra | Uniform-cost search. Optimal, but expands many nodes. |
-| A* | Heuristic-guided. Optimal with fewer expansions in practice. |
-| Greedy Best-First | Fastest expansion, but not always optimal. |
+| Algorithm         | Behavior                                                     |
+| ----------------- | ------------------------------------------------------------ |
+| Dijkstra          | Uniform-cost search. Optimal, but expands many nodes.        |
+| A*                | Heuristic-guided. Optimal with fewer expansions in practice. |
+| Greedy Best-First | Fastest expansion, but not always optimal.                   |
 
 ## Run
 

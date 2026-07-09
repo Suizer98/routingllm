@@ -8,6 +8,9 @@ services:
       - ./public:/app/public
       - ./index.html:/app/index.html
       - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
+      - ./tsconfig.node.json:/app/tsconfig.node.json
     environment:
       VITE_GROQ_API_KEY: ${VITE_GROQ_API_KEY:-}
     command: npm run dev -- --host 0.0.0.0

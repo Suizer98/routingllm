@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "prepare": "husky",
+    "typecheck": "tsc -b --noEmit",
+    "typecheck:watch": "tsc -b --watch --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint-staged": "lint-staged"
@@ -38,13 +40,14 @@
     "tailwindcss": "^4.1.11",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
+    "vite-plugin-checker": "^0.10.3",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.6.2"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,tsx,json,css,md}": [
-      "npm run format --check ."
+      "npm run format"
     ]
   }
 }
