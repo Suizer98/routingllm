@@ -22,7 +22,7 @@ export function LeftPane({ open, width, onResizeStart }: LeftPaneProps) {
 
   return (
     <div
-      className="fixed top-0 left-0 z-[2] box-border flex h-screen flex-col px-4 pt-[4.25rem] pb-4 font-sans text-slate-100 transition-[transform,opacity,box-shadow] duration-200 ease-out"
+      className="fixed top-0 left-0 z-[2] box-border flex h-screen flex-col p-4 font-sans text-slate-100 transition-[transform,opacity,box-shadow] duration-200 ease-out"
       aria-hidden={!open}
       style={{
         width,
