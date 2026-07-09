@@ -178,6 +178,7 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
   const routeError = useRoutingStore((state) => state.routeError);
   const isLoading = useRoutingStore((state) => state.isLoading);
   const isAnimating = useRoutingStore((state) => state.isAnimating);
+  const isAnimationPaused = useRoutingStore((state) => state.isAnimationPaused);
   const animationToken = useRoutingStore((state) => state.animationToken);
   const finishAnimation = useRoutingStore((state) => state.finishAnimation);
   const start = useLocationStore((state) => state.start);
@@ -277,7 +278,13 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
       routeCoords.length,
     );
     const animationStartedAt = performance.now();
+    let elapsedBeforePause = 0;
+    let segmentStart = animationStartedAt;
+    let wasPaused = false;
     let frameId = 0;
+
+    const getElapsed = () =>
+      elapsedBeforePause + (performance.now() - segmentStart);
 
     const applyExpansionFilter = (maxStep: number) => {
       const filter = revealStepFilter(maxStep);
@@ -367,8 +374,24 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
         return;
       }
 
+      const { isAnimationPaused } = useRoutingStore.getState();
+
+      if (isAnimationPaused) {
+        if (!wasPaused) {
+          elapsedBeforePause += performance.now() - segmentStart;
+          wasPaused = true;
+        }
+        frameId = requestAnimationFrame(frame);
+        return;
+      }
+
+      if (wasPaused) {
+        segmentStart = performance.now();
+        wasPaused = false;
+      }
+
       try {
-        const elapsed = performance.now() - animationStartedAt;
+        const elapsed = getElapsed();
         const pulsePhase = elapsed / 900;
 
         if (elapsed < exploreDurationMs) {
@@ -837,7 +860,11 @@ export function RouteMap({ chromeInsetLeft }: RouteMapProps) {
           <>
             {(route.geometry.properties?.name as string) ?? "Route"} ·{" "}
             {route.distanceKm.toFixed(0)} km · {route.durationHours.toFixed(1)} h
-            {isAnimating ? " · expanding until goal…" : ""}
+            {isAnimating && isAnimationPaused
+              ? " · paused"
+              : isAnimating
+                ? " · expanding until goal…"
+                : ""}
           </>
         ) : isLoading ? (
           "Building road graph and running algorithms…"

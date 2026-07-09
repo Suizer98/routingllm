@@ -18,11 +18,14 @@ type RoutingStore = {
   routeProgress: number;
   pulsePhase: number;
   isAnimating: boolean;
+  isAnimationPaused: boolean;
   isLoading: boolean;
   routeError: string | null;
   animationToken: number;
   setSelectedAlgorithm: (algorithmId: RoutingAlgorithmId) => void;
   visualizeRoute: () => Promise<void>;
+  pauseAnimation: () => void;
+  resumeAnimation: () => void;
   setAnimationFrame: (routeProgress: number, pulsePhase: number) => void;
   finishAnimation: () => void;
 };
@@ -35,6 +38,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
   routeProgress: 0,
   pulsePhase: 0,
   isAnimating: false,
+  isAnimationPaused: false,
   isLoading: false,
   routeError: null,
   animationToken: 0,
@@ -50,6 +54,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
         routeProgress: 0,
         pulsePhase: 0,
         isAnimating: true,
+        isAnimationPaused: false,
         animationToken: animationToken + 1,
       });
       return;
@@ -90,6 +95,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
         routeProgress: 0,
         pulsePhase: 0,
         isAnimating: true,
+        isAnimationPaused: false,
         isLoading: false,
         animationToken: animationToken + 1,
       });
@@ -103,11 +109,24 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
       });
     }
   },
+  pauseAnimation: () => {
+    const { isAnimating, isAnimationPaused } = get();
+    if (isAnimating && !isAnimationPaused) {
+      set({ isAnimationPaused: true });
+    }
+  },
+  resumeAnimation: () => {
+    const { isAnimating, isAnimationPaused } = get();
+    if (isAnimating && isAnimationPaused) {
+      set({ isAnimationPaused: false });
+    }
+  },
   setAnimationFrame: (routeProgress, pulsePhase) =>
     set({ routeProgress, pulsePhase }),
   finishAnimation: () =>
     set({
       isAnimating: false,
+      isAnimationPaused: false,
       routeProgress: 1,
       pulsePhase: 0,
     }),

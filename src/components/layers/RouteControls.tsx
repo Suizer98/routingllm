@@ -8,6 +8,7 @@ import {
 export function RouteControls() {
   const selectedAlgorithm = useRoutingStore((state) => state.selectedAlgorithm);
   const isAnimating = useRoutingStore((state) => state.isAnimating);
+  const isAnimationPaused = useRoutingStore((state) => state.isAnimationPaused);
   const isLoading = useRoutingStore((state) => state.isLoading);
   const routeError = useRoutingStore((state) => state.routeError);
   const route = useRoutingStore((state) => state.route);
@@ -17,6 +18,8 @@ export function RouteControls() {
     (state) => state.setSelectedAlgorithm,
   );
   const visualizeRoute = useRoutingStore((state) => state.visualizeRoute);
+  const pauseAnimation = useRoutingStore((state) => state.pauseAnimation);
+  const resumeAnimation = useRoutingStore((state) => state.resumeAnimation);
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,16 +83,31 @@ export function RouteControls() {
 
       <button
         type="button"
-        className="w-full cursor-pointer rounded-xl border-none bg-sky-600 px-4 py-3 text-[0.9375rem] font-semibold text-white transition-colors duration-150 hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isAnimating || isLoading}
+        className={`w-full cursor-pointer rounded-xl border-none px-4 py-3 text-[0.9375rem] font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${
+          isAnimating && !isAnimationPaused
+            ? "bg-slate-700 hover:bg-slate-600"
+            : "bg-sky-600 hover:bg-sky-700"
+        }`}
+        disabled={isLoading}
         onClick={() => {
+          if (isAnimating) {
+            if (isAnimationPaused) {
+              resumeAnimation();
+            } else {
+              pauseAnimation();
+            }
+            return;
+          }
+
           void visualizeRoute();
         }}
       >
         {isLoading
           ? "Running…"
           : isAnimating
-            ? "Visualizing route…"
+            ? isAnimationPaused
+              ? "Resume"
+              : "Pause"
             : "Visualize"}
       </button>
 
