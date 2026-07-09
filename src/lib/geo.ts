@@ -64,3 +64,34 @@ export function bearingRadians(
 
   return Math.atan2(y, x);
 }
+
+export function isWaypointAlongCorridor(
+  waypoint: [number, number],
+  start: [number, number],
+  end: [number, number],
+  maxDetourRatio = 1.4,
+  maxDetourKm = 60,
+) {
+  const directDistance = haversineKm(start, end);
+  const viaWaypoint =
+    haversineKm(start, waypoint) + haversineKm(waypoint, end);
+
+  return viaWaypoint <= directDistance * maxDetourRatio + maxDetourKm;
+}
+
+export function isReasonableRoute(
+  coordinates: [number, number][],
+  start: [number, number],
+  end: [number, number],
+  maxDetourRatio = 1.45,
+  maxDetourKm = 80,
+) {
+  if (coordinates.length < 2) {
+    return false;
+  }
+
+  const directDistance = haversineKm(start, end);
+  const routeDistance = pathLengthKm(coordinates);
+
+  return routeDistance <= directDistance * maxDetourRatio + maxDetourKm;
+}

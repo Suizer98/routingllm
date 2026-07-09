@@ -14,16 +14,61 @@ import type { RoutingAlgorithmId } from "@/types/routing";
 const system = `You control a Southeast Asia route demo on a real road graph.
 
 Tools (only when the user asks for something route-related):
-- setRouteEndpoint for start/end places
+- setRouteEndpoints when both start and end places change (preferred)
+- setRouteEndpoint for a single start or end change only
 - selectAlgorithm for dijkstra, astar, or greedy-best-first
 - visualizeRoute after changing endpoints or when the user wants to see the route
 - getRouteStatus when the user asks about the current route or comparison results
 
 Do not call any tools for greetings, thanks, or small talk. Reply briefly and friendly instead.
-When the user asks for a new route, set endpoints then call visualizeRoute.
+When the user asks for a new route, set endpoints first, then call visualizeRoute in a later step.
+If both start and end change, call setRouteEndpoints once instead of two setRouteEndpoint calls.
 Keep replies short. Explain algorithm tradeoffs using comparison numbers when available.`;
 
 const routingTools = {
+  setRouteEndpoints: tool({
+    description: "Set both the route start and end to place names at once",
+    inputSchema: z.object({
+      startPlace: z.string().describe("Start city or place name"),
+      endPlace: z.string().describe("End city or place name"),
+    }),
+    execute: async ({ startPlace, endPlace }) => {
+      const [startHit, endHit] = await Promise.all([
+        geocodePlace(startPlace),
+        geocodePlace(endPlace),
+      ]);
+
+      if (!startHit) {
+        return { ok: false as const, message: `Could not find "${startPlace}"` };
+      }
+      if (!endHit) {
+        return { ok: false as const, message: `Could not find "${endPlace}"` };
+      }
+
+      const locationStore = useLocationStore.getState();
+      locationStore.setRouteEndpoints(
+        createRouteEndpoint(
+          "start",
+          startHit.label,
+          shortLabelFromPlace(startHit.label),
+          startHit.coordinate,
+        ),
+        createRouteEndpoint(
+          "end",
+          endHit.label,
+          shortLabelFromPlace(endHit.label),
+          endHit.coordinate,
+        ),
+      );
+      await locationStore.resolveEndpoints();
+
+      return {
+        ok: true as const,
+        start: startHit.label,
+        end: endHit.label,
+      };
+    },
+  }),
   setRouteEndpoint: tool({
     description: "Set the route start or end to a place name",
     inputSchema: z.object({
@@ -48,7 +93,6 @@ const routingTools = {
       } else {
         locationStore.setEnd(endpoint);
       }
-      await locationStore.resolveEndpoints();
 
       return { ok: true as const, role, label: hit.label };
     },
@@ -69,6 +113,8 @@ const routingTools = {
     description: "Build the road graph, run algorithms, and animate the route",
     inputSchema: z.object({}),
     execute: async () => {
+      const locationStore = useLocationStore.getState();
+      await locationStore.resolveEndpoints();
       await useRoutingStore.getState().visualizeRoute();
       const state = useRoutingStore.getState();
 

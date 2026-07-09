@@ -1,7 +1,12 @@
 import type { LineString } from "geojson";
 
 import { endpointCoordinate } from "@/lib/geocoding";
-import { bearingRadians, haversineKm } from "@/lib/geo";
+import {
+  bearingRadians,
+  haversineKm,
+  isReasonableRoute,
+  isWaypointAlongCorridor,
+} from "@/lib/geo";
 import type { RouteEndpoint } from "@/types/location";
 
 export type GraphNode = {
@@ -39,7 +44,15 @@ const BATU_PAHAT: [number, number] = [102.9325, 1.8548];
 const KUANTAN: [number, number] = [103.332, 3.8077];
 const IPOH: [number, number] = [101.0901, 4.5975];
 
-const GRAPH_VERSION = 8;
+const ROUTE_HUB_WAYPOINTS: [number, number][] = [
+  MALACCA,
+  SEREMBAN,
+  BATU_PAHAT,
+  IPOH,
+  KUANTAN,
+];
+
+const GRAPH_VERSION = 9;
 
 const PRIMARY_ROUTE_SPACING_KM = 0.45;
 const PRIMARY_ROUTE_MAX_POINTS = 500;
@@ -414,12 +427,15 @@ async function fetchAllRoadPolylines(
       { waypoints: [start, quarter, end], alternatives: 2 },
       { waypoints: [start, midpoint, end], alternatives: 2 },
       { waypoints: [start, threeQuarter, end], alternatives: 2 },
-      { waypoints: [start, MALACCA, end], alternatives: 2 },
-      { waypoints: [start, SEREMBAN, end], alternatives: 2 },
-      { waypoints: [start, BATU_PAHAT, end], alternatives: 1 },
-      { waypoints: [start, IPOH, end], alternatives: 1 },
-      { waypoints: [start, KUANTAN, end], alternatives: 1 },
     ];
+
+  for (const hub of ROUTE_HUB_WAYPOINTS) {
+    if (!isWaypointAlongCorridor(hub, start, end)) {
+      continue;
+    }
+
+    queries.push({ waypoints: [start, hub, end], alternatives: 2 });
+  }
 
   const results = await Promise.all(
     queries.map((query) =>
@@ -432,6 +448,10 @@ async function fetchAllRoadPolylines(
 
   for (const group of results) {
     for (const route of group) {
+      if (!isReasonableRoute(route, start, end)) {
+        continue;
+      }
+
       const signature = routeSignature(route);
       if (seen.has(signature)) {
         continue;

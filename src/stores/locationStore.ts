@@ -15,12 +15,34 @@ type LocationStore = {
   isResolving: boolean;
   setStart: (endpoint: RouteEndpoint) => void;
   setEnd: (endpoint: RouteEndpoint) => void;
+  setRouteEndpoints: (start: RouteEndpoint, end: RouteEndpoint) => void;
   resolveEndpoints: () => Promise<void>;
   applyGraphCoordinates: (
     startCoordinate: [number, number],
     endCoordinate: [number, number],
   ) => void;
 };
+
+let endpointMutationChain: Promise<void> = Promise.resolve();
+let resolveGeneration = 0;
+
+function enqueueEndpointMutation<T>(work: () => Promise<T>): Promise<T> {
+  const run = endpointMutationChain.then(work);
+  endpointMutationChain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+export function waitForEndpointMutations(): Promise<void> {
+  return endpointMutationChain;
+}
+
+function bumpResolveGeneration() {
+  resolveGeneration += 1;
+  resetRoadGraphCache();
+}
 
 function withResolvedCoordinate(
   endpoint: RouteEndpoint,
@@ -37,30 +59,45 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
   end: DEFAULT_END,
   isResolving: false,
   setStart: (endpoint) => {
-    resetRoadGraphCache();
+    bumpResolveGeneration();
     set({ start: { ...endpoint, id: "start" } });
   },
   setEnd: (endpoint) => {
-    resetRoadGraphCache();
+    bumpResolveGeneration();
     set({ end: { ...endpoint, id: "end" } });
   },
-  resolveEndpoints: async () => {
-    const { start, end } = get();
-    set({ isResolving: true });
-
-    try {
-      const resolved = await resolveRouteEndpoints(start, end);
-      resetRoadGraphCache();
-      set({
-        start: resolved.start,
-        end: resolved.end,
-        isResolving: false,
-      });
-    } catch {
-      set({ isResolving: false });
-      throw new Error("Could not resolve route endpoints on the road network");
-    }
+  setRouteEndpoints: (start, end) => {
+    bumpResolveGeneration();
+    set({
+      start: { ...start, id: "start" },
+      end: { ...end, id: "end" },
+    });
   },
+  resolveEndpoints: async () =>
+    enqueueEndpointMutation(async () => {
+      const generation = resolveGeneration;
+      const { start, end } = get();
+      set({ isResolving: true });
+
+      try {
+        const resolved = await resolveRouteEndpoints(start, end);
+        if (generation !== resolveGeneration) {
+          return;
+        }
+
+        resetRoadGraphCache();
+        set({
+          start: resolved.start,
+          end: resolved.end,
+          isResolving: false,
+        });
+      } catch {
+        if (generation === resolveGeneration) {
+          set({ isResolving: false });
+        }
+        throw new Error("Could not resolve route endpoints on the road network");
+      }
+    }),
   applyGraphCoordinates: (startCoordinate, endCoordinate) => {
     const { start, end } = get();
     set({

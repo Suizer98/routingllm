@@ -4,6 +4,7 @@ import {
   compareRoutingAlgorithms,
   ROUTING_ALGORITHMS,
 } from "@/lib/routingAlgorithms";
+import { waitForEndpointMutations } from "@/stores/locationStore";
 import type {
   RouteComparison,
   RouteResult,
@@ -79,6 +80,7 @@ export const useRoutingStore = create<RoutingStore>((set, get) => ({
     });
 
     try {
+      await waitForEndpointMutations();
       const { comparisons, optimalDistanceKm } = await compareRoutingAlgorithms();
       const selected = comparisons.find(
         (item) => item.algorithmId === selectedAlgorithm,
