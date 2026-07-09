@@ -1,14 +1,4 @@
-import {
-  Box,
-  Button,
-  ButtonSpinner,
-  ButtonText,
-  HStack,
-  Pressable,
-  Text,
-  VStack,
-} from "@gluestack-ui/themed";
-
+import { PanePill } from "@/components/layout/PanePill";
 import { ROUTING_ALGORITHMS } from "@/lib/routingAlgorithms";
 import {
   getAlgorithmLabel,
@@ -29,113 +19,96 @@ export function RouteControls() {
   const visualizeRoute = useRoutingStore((state) => state.visualizeRoute);
 
   return (
-    <VStack
-      space="sm"
-      pt="$3"
-      borderTopWidth={1}
-      borderTopColor="$borderLight200"
-      mt="auto"
-    >
-      <Text
-        size="xs"
-        fontWeight="$semibold"
-        textTransform="uppercase"
-        letterSpacing={1}
-        color="$textLight500"
-      >
-        Pathfinding algorithms
-      </Text>
+    <div className="flex flex-col gap-3">
+      {ROUTING_ALGORITHMS.map((algorithm) => {
+        const active = selectedAlgorithm === algorithm.id;
+        const comparison = comparisons.find(
+          (item) => item.algorithmId === algorithm.id,
+        );
+        const isSuboptimal =
+          comparison !== undefined &&
+          optimalDistanceKm !== null &&
+          comparison.route.distanceKm > optimalDistanceKm + 0.5;
 
-      <VStack space="xs">
-        {ROUTING_ALGORITHMS.map((algorithm) => {
-          const active = selectedAlgorithm === algorithm.id;
-          const comparison = comparisons.find(
-            (item) => item.algorithmId === algorithm.id,
-          );
-
-          return (
-            <Pressable
-              key={algorithm.id}
-              onPress={() => setSelectedAlgorithm(algorithm.id)}
-              p="$3"
-              borderWidth={1}
-              borderColor={active ? "$primary500" : "$borderLight200"}
-              borderRadius="$lg"
-              bg={active ? "$primary50" : "$white"}
+        return (
+          <button
+            key={algorithm.id}
+            type="button"
+            className="w-full cursor-pointer border-none bg-transparent p-0 text-left"
+            onClick={() => setSelectedAlgorithm(algorithm.id)}
+          >
+            <div
+              className={`rounded-xl border p-3.5 transition-colors duration-150 ${
+                active
+                  ? "border-sky-400 bg-sky-400/10"
+                  : "border-slate-700 bg-slate-900"
+              }`}
             >
-              <Box flexDirection="row" alignItems="flex-start" gap="$2">
-                <Box
-                  width={10}
-                  height={10}
-                  mt="$1"
-                  borderRadius="$full"
-                  bg={algorithm.color}
+              <div className="flex items-start gap-3">
+                <span
+                  className="mt-1 h-3 w-3 shrink-0 rounded-full"
+                  style={{ background: algorithm.color }}
                 />
-                <VStack flex={1} space="xs">
-                  <Text fontWeight="$semibold" size="sm">
-                    {algorithm.name}
-                  </Text>
-                  <Text size="xs" color="$textLight500">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-slate-100">
+                      {algorithm.name}
+                    </span>
+                    {comparison ? (
+                      <PanePill
+                        label={isSuboptimal ? "Suboptimal" : "Optimal"}
+                        tone={isSuboptimal ? "warning" : "success"}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="m-0 text-xs leading-snug text-slate-400">
                     {algorithm.description}
-                  </Text>
+                  </p>
                   {comparison ? (
-                    <Text size="xs" color="$textLight600">
+                    <p className="mt-1 mb-0 text-xs text-slate-300">
                       {comparison.route.distanceKm.toFixed(0)} km ·{" "}
                       {comparison.route.nodesExpanded} nodes ·{" "}
                       {comparison.route.elapsedMs.toFixed(1)} ms
-                      {optimalDistanceKm !== null &&
-                      comparison.route.distanceKm > optimalDistanceKm + 0.5
-                        ? " · suboptimal"
-                        : " · optimal"}
-                    </Text>
+                    </p>
                   ) : null}
-                </VStack>
-              </Box>
-            </Pressable>
-          );
-        })}
-      </VStack>
+                </div>
+              </div>
+            </div>
+          </button>
+        );
+      })}
 
-      <Button
-        size="md"
-        action="primary"
-        isDisabled={isAnimating || isLoading}
-        onPress={() => {
+      <button
+        type="button"
+        className="w-full cursor-pointer rounded-xl border-none bg-sky-600 px-4 py-3 text-[0.9375rem] font-semibold text-white transition-colors duration-150 hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={isAnimating || isLoading}
+        onClick={() => {
           void visualizeRoute();
         }}
       >
-        {isLoading || isAnimating ? <ButtonSpinner color="white" /> : null}
-        <ButtonText>
-          {isLoading
-            ? "Running comparison…"
-            : isAnimating
-              ? "Visualizing route…"
-              : "Compare & Visualize"}
-        </ButtonText>
-      </Button>
+        {isLoading
+          ? "Running…"
+          : isAnimating
+            ? "Visualizing route…"
+            : "Visualize"}
+      </button>
 
       {routeError ? (
-        <Text size="sm" color="$error600" textAlign="center">
-          {routeError}
-        </Text>
+        <p className="m-0 text-center text-sm text-red-400">{routeError}</p>
       ) : null}
 
       {route ? (
-        <VStack space="xs">
-          <Text size="sm" color="$textLight600" textAlign="center">
-            {getAlgorithmLabel(route.algorithmId)} · {route.distanceKm.toFixed(0)}{" "}
-            km · {route.durationHours.toFixed(1)} h
-          </Text>
-          <HStack justifyContent="center" space="md">
-            <Text size="xs" color="$textLight500">
-              {route.nodesExpanded} nodes expanded
-            </Text>
-            <Text size="xs" color="$textLight500">
-              {route.elapsedMs.toFixed(1)} ms
-            </Text>
-          </HStack>
-        </VStack>
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-3 text-center">
+          <p className="mb-2 text-sm text-slate-100">
+            {getAlgorithmLabel(route.algorithmId)} ·{" "}
+            {route.distanceKm.toFixed(0)} km · {route.durationHours.toFixed(1)} h
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <PanePill label={`${route.nodesExpanded} nodes`} tone="muted" />
+            <PanePill label={`${route.elapsedMs.toFixed(1)} ms`} tone="muted" />
+          </div>
+        </div>
       ) : null}
-    </VStack>
+    </div>
   );
 }

@@ -1,5 +1,7 @@
 import type { Feature, LineString } from "geojson";
 
+import type { ExpansionEdge } from "@/lib/pathfinding";
+
 export type RoutingAlgorithmId = "dijkstra" | "astar" | "greedy-best-first";
 
 export type RoutingAlgorithm = {
@@ -17,6 +19,11 @@ export type RouteResult = {
   elapsedMs: number;
   guaranteedOptimal: boolean;
   geometry: Feature<LineString>;
+  expansionEdges: ExpansionEdge[];
+  goalReachedStep: number;
+  goalReachedLayer: number;
+  goalPathSteps: number[];
+  goalPathLayers: number[];
 };
 
 export type RouteComparison = {

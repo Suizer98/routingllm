@@ -1,17 +1,21 @@
-import type { Feature, LineString } from "geojson";
-
 import type {
   RouteComparison,
   RouteResult,
   RoutingAlgorithm,
   RoutingAlgorithmId,
 } from "@/types/routing";
+import type { ExpansionEdge } from "@/lib/pathfinding";
 import { buildRoadGraph } from "@/lib/roadGraph";
+import { useLocationStore } from "@/stores/locationStore";
 import {
+  buildWavefrontExpansion,
   runAStar,
   runDijkstra,
   runGreedyBestFirst,
+  sliceLineString,
 } from "@/lib/pathfinding";
+
+export { sliceLineString };
 
 export const ROUTING_ALGORITHMS: RoutingAlgorithm[] = [
   {
@@ -51,6 +55,11 @@ function toRouteResult(
   nodesExpanded: number,
   elapsedMs: number,
   guaranteedOptimal: boolean,
+  expansionEdges: ExpansionEdge[],
+  goalReachedStep: number,
+  goalReachedLayer: number,
+  goalPathSteps: number[],
+  goalPathLayers: number[],
 ): RouteResult {
   const algorithm = getAlgorithm(algorithmId);
 
@@ -61,6 +70,11 @@ function toRouteResult(
     nodesExpanded,
     elapsedMs,
     guaranteedOptimal,
+    expansionEdges,
+    goalReachedStep,
+    goalReachedLayer,
+    goalPathSteps,
+    goalPathLayers,
     geometry: {
       type: "Feature",
       properties: {
@@ -75,7 +89,10 @@ function toRouteResult(
   };
 }
 
-function runAlgorithm(algorithmId: RoutingAlgorithmId, graph: Awaited<ReturnType<typeof buildRoadGraph>>) {
+function runAlgorithm(
+  algorithmId: RoutingAlgorithmId,
+  graph: Awaited<ReturnType<typeof buildRoadGraph>>,
+) {
   switch (algorithmId) {
     case "dijkstra":
       return runDijkstra(graph);
@@ -92,7 +109,14 @@ export async function compareRoutingAlgorithms(): Promise<{
   comparisons: RouteComparison[];
   optimalDistanceKm: number;
 }> {
-  const graph = await buildRoadGraph();
+  const locationState = useLocationStore.getState();
+  await locationState.resolveEndpoints();
+
+  const { start, end, applyGraphCoordinates } = useLocationStore.getState();
+  const graph = await buildRoadGraph(start, end);
+  applyGraphCoordinates(graph.startCoordinate, graph.goalCoordinate);
+
+  const wavefront = buildWavefrontExpansion(graph);
   const comparisons: RouteComparison[] = [];
   let optimalDistanceKm = Infinity;
 
@@ -109,6 +133,11 @@ export async function compareRoutingAlgorithms(): Promise<{
         result.nodesExpanded,
         result.elapsedMs,
         result.guaranteedOptimal,
+        wavefront.expansionEdges,
+        wavefront.goalReachedStep,
+        wavefront.goalReachedLayer,
+        wavefront.goalPathSteps,
+        wavefront.goalPathLayers,
       ),
     });
   }
@@ -127,24 +156,4 @@ export async function fetchRoadRoute(
   }
 
   return match.route;
-}
-
-export function sliceLineString(
-  geometry: Feature<LineString>,
-  progress: number,
-): Feature<LineString> {
-  const coordinates = geometry.geometry.coordinates as [number, number][];
-  const clampedProgress = Math.min(Math.max(progress, 0), 1);
-  const targetCount = Math.max(
-    2,
-    Math.ceil((coordinates.length - 1) * clampedProgress) + 1,
-  );
-
-  return {
-    ...geometry,
-    geometry: {
-      type: "LineString",
-      coordinates: coordinates.slice(0, targetCount),
-    },
-  };
 }

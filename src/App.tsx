@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Pressable } from "@gluestack-ui/themed";
 
 import { LeftPane } from "@/components/layout/LeftPane";
 import { RouteMap } from "@/components/map/RouteMap";
-
-import "./App.css";
+import { useLocationStore } from "@/stores/locationStore";
 
 const minPaneWidth = 280;
 const defaultPaneWidth = 320;
@@ -23,6 +21,10 @@ function App() {
   const stopResize = useCallback(() => {
     resizingRef.current = false;
     document.body.classList.remove("is-resizing-pane");
+  }, []);
+
+  useEffect(() => {
+    void useLocationStore.getState().resolveEndpoints();
   }, []);
 
   useEffect(() => {
@@ -54,44 +56,28 @@ function App() {
     document.body.classList.add("is-resizing-pane");
   };
 
+  const mapChromeInsetLeft = paneOpen ? paneWidth + 16 : 16;
+
   return (
-    <Box width="100%" height="100%" position="relative" overflow="hidden">
-      <Box className="map-pane" aria-label="Route map" width="100%" height="100%">
-        <RouteMap />
-      </Box>
+    <div className="relative h-full w-full overflow-hidden bg-slate-900">
+      <div className="fixed inset-0 z-0" aria-label="Route map">
+        <RouteMap chromeInsetLeft={mapChromeInsetLeft} />
+      </div>
 
-      <Pressable
-        position="fixed"
-        top="$4"
-        left="$4"
-        zIndex={4}
-        width={40}
-        height={40}
-        borderWidth={1}
-        borderColor="$borderLight200"
-        borderRadius="$lg"
-        bg="$backgroundLight50"
-        alignItems="center"
-        justifyContent="center"
-        onPress={() => setPaneOpen((value) => !value)}
-        accessibilityLabel={paneOpen ? "Collapse left pane" : "Expand left pane"}
-        sx={{
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
-        }}
+      <button
+        type="button"
+        className="fixed top-4 z-[4] flex h-[42px] w-[42px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800 p-0 shadow-lg transition-[left,background-color] duration-200 ease-out hover:bg-slate-700/80"
+        onClick={() => setPaneOpen((value) => !value)}
+        aria-label={paneOpen ? "Collapse left pane" : "Expand left pane"}
+        style={{ left: mapChromeInsetLeft }}
       >
-        <Box gap="$1" alignItems="center">
-          <Box width={16} height={2} bg="$textLight900" borderRadius="$full" />
-          <Box width={16} height={2} bg="$textLight900" borderRadius="$full" />
-          <Box width={16} height={2} bg="$textLight900" borderRadius="$full" />
-        </Box>
-      </Pressable>
+        <span className="h-0.5 w-4 rounded-full bg-slate-100" />
+        <span className="h-0.5 w-4 rounded-full bg-slate-100" />
+        <span className="h-0.5 w-4 rounded-full bg-slate-100" />
+      </button>
 
-      <LeftPane
-        open={paneOpen}
-        width={paneWidth}
-        onResizeStart={startResize}
-      />
-    </Box>
+      <LeftPane open={paneOpen} width={paneWidth} onResizeStart={startResize} />
+    </div>
   );
 }
 

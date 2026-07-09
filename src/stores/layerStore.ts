@@ -3,6 +3,11 @@ import { create } from "zustand";
 import type { MapLayer } from "@/types/layers";
 import {
   END_LAYER_ID,
+  EXPANSION_GLOW_LAYER_ID,
+  EXPANSION_LAYER_ID,
+  EXPANSION_NODE_LAYER_ID,
+  ROUTE_CORE_LAYER_ID,
+  ROUTE_HEAD_LAYER_ID,
   ROUTE_LAYER_ID,
   START_LAYER_ID,
 } from "@/lib/constants";
@@ -13,18 +18,26 @@ const initialLayers: MapLayer[] = [
     name: "Route",
     visible: true,
     kind: "line",
-    mapLayerIds: [ROUTE_LAYER_ID, `${ROUTE_LAYER_ID}-glow`],
+    mapLayerIds: [
+      ROUTE_LAYER_ID,
+      `${ROUTE_LAYER_ID}-glow`,
+      ROUTE_CORE_LAYER_ID,
+      EXPANSION_GLOW_LAYER_ID,
+      EXPANSION_LAYER_ID,
+      EXPANSION_NODE_LAYER_ID,
+      ROUTE_HEAD_LAYER_ID,
+    ],
   },
   {
     id: "start",
-    name: "Singapore (Start)",
+    name: "Start",
     visible: true,
     kind: "circle",
     mapLayerIds: [START_LAYER_ID],
   },
   {
     id: "end",
-    name: "Kuala Lumpur (End)",
+    name: "End",
     visible: true,
     kind: "circle",
     mapLayerIds: [END_LAYER_ID],
