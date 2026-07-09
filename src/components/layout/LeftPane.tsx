@@ -40,21 +40,23 @@ export function LeftPane({ open, width, onResizeStart }: LeftPaneProps) {
         <PaneTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="scrollbar-pane flex min-h-0 w-full flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto pb-2">
-          {activeTab === "layers" ? (
-            <>
-              <PaneCard title="Map layers">
-                <LayerList />
-              </PaneCard>
-              <PaneDivider />
-              <PaneCard title="Algorithms">
-                <RouteControls />
-              </PaneCard>
-            </>
-          ) : (
+          <div
+            className={`flex flex-col gap-4 ${activeTab === "layers" ? "" : "hidden"}`}
+          >
+            <PaneCard title="Map layers">
+              <LayerList />
+            </PaneCard>
+            <PaneDivider />
+            <PaneCard title="Algorithms">
+              <RouteControls />
+            </PaneCard>
+          </div>
+
+          <div className={activeTab === "chats" ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
             <PaneCard title="Assistant">
               <ChatPanel />
             </PaneCard>
-          )}
+          </div>
         </div>
       </div>
 
