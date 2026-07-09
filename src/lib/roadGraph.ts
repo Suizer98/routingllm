@@ -1,7 +1,7 @@
 import type { LineString } from "geojson";
 
 import { endpointCoordinate } from "@/lib/geocoding";
-import { haversineKm } from "@/lib/geo";
+import { bearingRadians, haversineKm } from "@/lib/geo";
 import type { RouteEndpoint } from "@/types/location";
 
 export type GraphNode = {
@@ -39,7 +39,14 @@ const BATU_PAHAT: [number, number] = [102.9325, 1.8548];
 const KUANTAN: [number, number] = [103.332, 3.8077];
 const IPOH: [number, number] = [101.0901, 4.5975];
 
-const GRAPH_VERSION = 7;
+const GRAPH_VERSION = 8;
+
+const PRIMARY_ROUTE_SPACING_KM = 0.45;
+const PRIMARY_ROUTE_MAX_POINTS = 500;
+const ALTERNATE_ROUTE_SPACING_KM = 0.7;
+const ALTERNATE_ROUTE_MAX_POINTS = 280;
+const NODE_MERGE_KM = 0.12;
+const MIN_CURVE_DEGREES = 4;
 
 let cachedGraph: RoadGraph | null = null;
 let cachedGraphVersion = 0;
@@ -86,30 +93,93 @@ function sampleBackbone(coordinates: [number, number][], targetCount: number) {
   return sampled;
 }
 
-function preserveRouteDetail(
+function bearingDeltaDegrees(
+  previous: [number, number],
+  current: [number, number],
+  next: [number, number],
+) {
+  const inBearing = bearingRadians(previous, current);
+  const outBearing = bearingRadians(current, next);
+  let delta = Math.abs(outBearing - inBearing);
+  if (delta > Math.PI) {
+    delta = 2 * Math.PI - delta;
+  }
+  return (delta * 180) / Math.PI;
+}
+
+function sampleWithCurvaturePriority(
+  coordinates: [number, number][],
+  keep: boolean[],
+  maxPoints: number,
+) {
+  const requiredIndices = keep
+    .map((value, index) => (value ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (requiredIndices.length >= maxPoints) {
+    return sampleBackbone(coordinates, maxPoints);
+  }
+
+  const picked = new Set(requiredIndices);
+  const optionalIndices: number[] = [];
+  for (let index = 0; index < coordinates.length; index += 1) {
+    if (!keep[index]) {
+      optionalIndices.push(index);
+    }
+  }
+
+  const slotsLeft = maxPoints - picked.size;
+  if (optionalIndices.length > 0 && slotsLeft > 0) {
+    const step = optionalIndices.length / slotsLeft;
+    for (let slot = 0; slot < slotsLeft; slot += 1) {
+      picked.add(optionalIndices[Math.min(optionalIndices.length - 1, Math.round(slot * step))]);
+    }
+  }
+
+  return Array.from(picked)
+    .sort((left, right) => left - right)
+    .map((index) => coordinates[index]);
+}
+
+function preserveCurvatureAndSpacing(
   coordinates: [number, number][],
   maxSpacingKm: number,
   maxPoints: number,
+  minTurnDegrees = MIN_CURVE_DEGREES,
 ) {
   if (coordinates.length <= 2) {
     return coordinates;
   }
 
+  const keep = coordinates.map((_, index) => {
+    if (index === 0 || index === coordinates.length - 1) {
+      return true;
+    }
+
+    return (
+      bearingDeltaDegrees(
+        coordinates[index - 1],
+        coordinates[index],
+        coordinates[index + 1],
+      ) >= minTurnDegrees
+    );
+  });
+
   const detailed: [number, number][] = [coordinates[0]];
   let anchor = coordinates[0];
 
-  for (let index = 1; index < coordinates.length - 1; index += 1) {
+  for (let index = 1; index < coordinates.length; index += 1) {
     const point = coordinates[index];
-    if (haversineKm(anchor, point) >= maxSpacingKm) {
+    const isLast = index === coordinates.length - 1;
+
+    if (keep[index] || isLast || haversineKm(anchor, point) >= maxSpacingKm) {
       detailed.push(point);
       anchor = point;
     }
   }
 
-  detailed.push(coordinates[coordinates.length - 1]);
-
   if (detailed.length > maxPoints) {
-    return sampleBackbone(detailed, maxPoints);
+    return sampleWithCurvaturePriority(coordinates, keep, maxPoints);
   }
 
   return detailed;
@@ -187,7 +257,7 @@ function getOrCreateNode(
   coordinate: [number, number],
   routeId: number,
   nodes: GraphNode[],
-  mergeKm = 0.4,
+  mergeKm = NODE_MERGE_KM,
 ) {
   const existing = findNearbyNodeIdSameRoute(
     nodes,
@@ -212,8 +282,14 @@ function addRouteChain(
   spacingKm: number,
   maxPoints: number,
   weightFactor: number,
+  minTurnDegrees = MIN_CURVE_DEGREES,
 ) {
-  const sampled = preserveRouteDetail(coordinates, spacingKm, maxPoints);
+  const sampled = preserveCurvatureAndSpacing(
+    coordinates,
+    spacingKm,
+    maxPoints,
+    minTurnDegrees,
+  );
   let previousId: number | null = null;
 
   for (const coordinate of sampled) {
@@ -319,9 +395,25 @@ async function fetchAllRoadPolylines(
   start: [number, number],
   end: [number, number],
 ): Promise<[number, number][][]> {
+  const midpoint: [number, number] = [
+    (start[0] + end[0]) / 2,
+    (start[1] + end[1]) / 2,
+  ];
+  const quarter: [number, number] = [
+    start[0] + (end[0] - start[0]) * 0.33,
+    start[1] + (end[1] - start[1]) * 0.33,
+  ];
+  const threeQuarter: [number, number] = [
+    start[0] + (end[0] - start[0]) * 0.67,
+    start[1] + (end[1] - start[1]) * 0.67,
+  ];
+
   const queries: Array<{ waypoints: [number, number][]; alternatives: number }> =
     [
       { waypoints: [start, end], alternatives: 3 },
+      { waypoints: [start, quarter, end], alternatives: 2 },
+      { waypoints: [start, midpoint, end], alternatives: 2 },
+      { waypoints: [start, threeQuarter, end], alternatives: 2 },
       { waypoints: [start, MALACCA, end], alternatives: 2 },
       { waypoints: [start, SEREMBAN, end], alternatives: 2 },
       { waypoints: [start, BATU_PAHAT, end], alternatives: 1 },
@@ -373,18 +465,20 @@ async function buildGraphFromRoads(
   const adjacency = new Map<number, GraphEdge[]>();
 
   routes.forEach((route, routeIndex) => {
+    const isPrimary = routeIndex === 0;
     addRouteChain(
       route,
       routeIndex,
       nodes,
       adjacency,
-      routeIndex === 0 ? 2 : 2.5,
-      routeIndex === 0 ? 150 : 90,
+      isPrimary ? PRIMARY_ROUTE_SPACING_KM : ALTERNATE_ROUTE_SPACING_KM,
+      isPrimary ? PRIMARY_ROUTE_MAX_POINTS : ALTERNATE_ROUTE_MAX_POINTS,
       0.92 + (routeIndex % 4) * 0.03,
+      isPrimary ? MIN_CURVE_DEGREES : MIN_CURVE_DEGREES + 1,
     );
   });
 
-  connectRouteJunctions(nodes, adjacency, 8);
+  connectRouteJunctions(nodes, adjacency, 5);
 
   const startId = connectEndpointHub(nodes, adjacency, startCoord, 18);
   const goalId = connectEndpointHub(nodes, adjacency, endCoord, 18);
